@@ -1,0 +1,9 @@
+{
+  "name": "ld-appeals",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "cookie": "^0.6.0",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
