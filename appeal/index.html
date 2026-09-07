@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Appeals — Literally Donate</title>
+<style>
+  :root {
+    --bg: #1a1b1e;
+    --panel: #232428;
+    --panel-border: #303136;
+    --text: #e7e8ea;
+    --muted: #8b8d94;
+    --blurple: #5865f2;
+    --ld-purple: #9b5de5;
+    --danger: #ed4245;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .card {
+    width: 100%;
+    max-width: 460px;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    padding: 32px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .brand-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--ld-purple);
+  }
+  .brand-name { font-size: 14px; color: var(--muted); }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  p.sub { color: var(--muted); font-size: 14px; margin: 0 0 24px; line-height: 1.5; }
+
+  .discord-btn {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    width: 100%; padding: 12px 16px;
+    background: var(--blurple); color: #fff;
+    border: none; border-radius: 8px;
+    font-size: 15px; font-weight: 600; cursor: pointer;
+    text-decoration: none;
+  }
+  .discord-btn:hover { background: #4a54d6; }
+
+  .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .type-card {
+    border: 1px solid var(--panel-border);
+    background: #1e1f23;
+    border-radius: 8px;
+    padding: 14px;
+    cursor: pointer;
+    text-align: left;
+  }
+  .type-card.active { border-color: var(--ld-purple); background: rgba(155,93,229,0.08); }
+  .type-card strong { display: block; font-size: 14px; margin-bottom: 2px; }
+  .type-card span { font-size: 12px; color: var(--muted); }
+
+  label { display: block; font-size: 13px; color: var(--muted); margin: 14px 0 6px; }
+  input, textarea {
+    width: 100%; padding: 10px 12px;
+    background: #1e1f23; border: 1px solid var(--panel-border);
+    border-radius: 8px; color: var(--text); font-size: 14px;
+    font-family: inherit;
+  }
+  textarea { min-height: 100px; resize: vertical; }
+  input:focus, textarea:focus { outline: 2px solid var(--ld-purple); outline-offset: 1px; }
+
+  .submit-btn {
+    width: 100%; margin-top: 20px; padding: 12px;
+    background: var(--ld-purple); color: #fff; border: none; border-radius: 8px;
+    font-size: 15px; font-weight: 600; cursor: pointer;
+  }
+  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .user-row { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+  .user-row img { width: 32px; height: 32px; border-radius: 50%; }
+  .user-row span { font-size: 14px; color: var(--muted); }
+
+  .status { font-size: 13px; margin-top: 12px; }
+  .status.error { color: var(--danger); }
+  .status.success { color: #57f287; }
+
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="brand">
+    <div class="brand-dot"></div>
+    <span class="brand-name">Literally Donate — Appeals</span>
+  </div>
+
+  <div id="login-view">
+    <h1>Log in to appeal</h1>
+    <p class="sub">Sign in with Discord to submit a game ban appeal or a Discord server appeal. Staff review every submission.</p>
+    <a class="discord-btn" href="/api/auth/discord">Log in with Discord</a>
+    <p class="status error hidden" id="login-error"></p>
+  </div>
+
+  <div id="appeal-view" class="hidden">
+    <div class="user-row">
+      <img id="user-avatar" alt="">
+      <span id="user-name"></span>
+    </div>
+
+    <h1>Submit an appeal</h1>
+    <p class="sub">Choose what you're appealing, then explain what happened.</p>
+
+    <div class="type-grid">
+      <button type="button" class="type-card" data-type="game">
+        <strong>Game ban</strong>
+        <span>Banned in Literally Donate</span>
+      </button>
+      <button type="button" class="type-card" data-type="server">
+        <strong>Server appeal</strong>
+        <span>Banned from the Discord</span>
+      </button>
+    </div>
+
+    <div id="roblox-field" class="hidden">
+      <label for="roblox-username">Roblox username</label>
+      <input id="roblox-username" type="text" placeholder="Your Roblox username">
+    </div>
+
+    <label for="reason">Why should this be reversed?</label>
+    <textarea id="reason" placeholder="Explain what happened and why the ban/mute/warn should be lifted (min. 20 characters)."></textarea>
+
+    <label for="evidence">Evidence or additional context (optional)</label>
+    <textarea id="evidence" placeholder="Links, screenshots, timestamps — anything that helps staff review this."></textarea>
+
+    <button class="submit-btn" id="submit-btn" disabled>Select an appeal type</button>
+    <p class="status hidden" id="submit-status"></p>
+  </div>
+</div>
+
+<script>
+  const loginView = document.getElementById('login-view');
+  const appealView = document.getElementById('appeal-view');
+  const typeCards = document.querySelectorAll('.type-card');
+  const robloxField = document.getElementById('roblox-field');
+  const submitBtn = document.getElementById('submit-btn');
+  const submitStatus = document.getElementById('submit-status');
+
+  let appealType = null;
+
+  function setStatus(el, msg, kind) {
+    el.textContent = msg;
+    el.className = 'status ' + kind;
+  }
+
+  typeCards.forEach(card => {
+    card.addEventListener('click', () => {
+      typeCards.forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      appealType = card.dataset.type;
+      robloxField.classList.toggle('hidden', appealType !== 'game');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit appeal';
+    });
+  });
+
+  submitBtn.addEventListener('click', async () => {
+    const reason = document.getElementById('reason').value.trim();
+    const evidence = document.getElementById('evidence').value.trim();
+    const robloxUsername = document.getElementById('roblox-username').value.trim();
+
+    if (reason.length < 20) {
+      setStatus(submitStatus, 'Reason needs to be at least 20 characters.', 'error');
+      submitStatus.classList.remove('hidden');
+      return;
+    }
+    if (appealType === 'game' && !robloxUsername) {
+      setStatus(submitStatus, 'Roblox username is required for game appeals.', 'error');
+      submitStatus.classList.remove('hidden');
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting…';
+
+    try {
+      const res = await fetch('/api/appeal/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ appealType, robloxUsername, reason, evidence }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Submission failed');
+
+      setStatus(submitStatus, 'Appeal submitted. Staff will review it soon.', 'success');
+      submitStatus.classList.remove('hidden');
+      submitBtn.textContent = 'Submitted';
+    } catch (err) {
+      setStatus(submitStatus, err.message, 'error');
+      submitStatus.classList.remove('hidden');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit appeal';
+    }
+  });
+
+  (async function checkSession() {
+    const res = await fetch('/api/auth/me');
+    const { user } = await res.json();
+    if (user) {
+      loginView.classList.add('hidden');
+      appealView.classList.remove('hidden');
+      document.getElementById('user-name').textContent = `${user.username}`;
+      document.getElementById('user-avatar').src = user.avatar
+        ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=64`
+        : `https://cdn.discordapp.com/embed/avatars/0.png`;
+    }
+
+    const params = new URLSearchParams(location.search);
+    if (params.get('error')) {
+      document.getElementById('login-error').textContent = 'Discord login failed, try again.';
+      document.getElementById('login-error').classList.remove('hidden');
+    }
+  })();
+</script>
+
+</body>
+</html>
